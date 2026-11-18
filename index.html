@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكي الطباعة وش وضهر وترابيزة النور الرقمية | Duplex Print Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="logo-icon">🖨️</div>
+            <div class="brand-text">
+                <h1>محاكي الطباعة الدوبلكس <span class="badge">Duplex Simulator</span></h1>
+                <p>فحص تطابق الوش والظهر، محاكاة تقليب الورق 3D، ومنع هدر الورق</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <div class="gpu-indicator" title="تطبيق الويب يستغل كارت الشاشة (GPU Acceleration) لمعالجة الصور ثلاثية الأبعاد">
+                <span class="gpu-dot"></span>
+                <span class="gpu-name">GPU Accelerated</span>
+            </div>
+            <button id="btnLoadSample" class="btn btn-secondary" title="تحميل نماذج كروت الـ ID المرفقة">
+                <span>🔄 تحميل النموذج المرفق</span>
+            </button>
+            <button id="btnHelp" class="btn btn-icon" title="دليل الاستخدام السريع">❔</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-container">
+        
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            
+            <!-- Upload Section -->
+            <section class="card upload-card">
+                <h2 class="card-title">📁 ملفات الطباعة</h2>
+                <div class="upload-grid">
+                    <div class="upload-box active-target" id="dropFront" tabindex="0" title="قف هنا واضغط Ctrl + V لصق صورة الوجه">
+                        <input type="file" id="inputFront" accept="image/*,application/pdf" class="file-input">
+                        <div class="upload-preview" id="previewFront">
+                            <span class="upload-icon">📄</span>
+                            <span class="upload-label">الوجه (Front)</span>
+                            <span class="upload-sub">اضغط أو اسحب</span>
+                            <span class="paste-badge">📋 الصق Ctrl + V</span>
+                        </div>
+                    </div>
+                    <div class="upload-box" id="dropBack" tabindex="0" title="قف هنا واضغط Ctrl + V لصق صورة الظهر">
+                        <input type="file" id="inputBack" accept="image/*,application/pdf" class="file-input">
+                        <div class="upload-preview" id="previewBack">
+                            <span class="upload-icon">📑</span>
+                            <span class="upload-label">الظهر (Back)</span>
+                            <span class="upload-sub">اضغط أو اسحب</span>
+                            <span class="paste-badge">📋 الصق Ctrl + V</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="btnSwap" class="btn btn-outline btn-sm w-100 mt-2">
+                    🔄 تبديل الوش والظهر (Swap)
+                </button>
+            </section>
+
+            <!-- Mode Selector Tabs -->
+            <section class="card tabs-card">
+                <h2 class="card-title">🎯 وضع المحاكاة</h2>
+                <div class="tabs-nav">
+                    <button class="tab-btn active" data-tab="tab3d">
+                        <span class="tab-icon">🔄</span>
+                        <span class="tab-text">محاكي الورقة 3D</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tabLightbox">
+                        <span class="tab-icon">💡</span>
+                        <span class="tab-text">ترابيزة النور (تطابق)</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tabBooklet">
+                        <span class="tab-icon">📖</span>
+                        <span class="tab-text">محاكي الكتيب (طي)</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tabPrinterGuide">
+                        <span class="tab-icon">🧭</span>
+                        <span class="tab-text">دليل قلب الورقة</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Contextual Controls per Tab -->
+            <section class="card controls-card" id="contextControls">
+                
+                <!-- Controls for 3D Tab -->
+                <div class="tab-controls active" id="ctrls-tab3d">
+                    <h3 class="controls-title">إعدادات تقليب الطابعة (Duplex Mode)</h3>
+                    
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="duplexFlip" value="long" checked id="flipLong">
+                            <div class="radio-box">
+                                <span class="radio-title">قلب على الحافة الطويلة (Long Edge)</span>
+                                <span class="radio-desc">تدوير أفقي مثل صفحات الكتاب العادي (Booklet)</span>
+                            </div>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="duplexFlip" value="short" id="flipShort">
+                            <div class="radio-box">
+                                <span class="radio-title">قلب على الحافة القصيرة (Short Edge)</span>
+                                <span class="radio-desc">تدوير رأسي مثل النتيجة أو التقويم (Calendar)</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="action-buttons-grid">
+                        <button id="btnFlipPaper" class="btn btn-primary btn-lg">
+                            <span>🔁 اقلب الورقة الآن</span>
+                        </button>
+                        <button id="btnReset3D" class="btn btn-secondary">
+                            <span>🔄 إعادة الزاوية</span>
+                        </button>
+                    </div>
+
+                    <div class="slider-group mt-3">
+                        <div class="slider-header">
+                            <span>سرعة الدوران (Speed):</span>
+                            <span id="speedVal">1x</span>
+                        </div>
+                        <input type="range" id="flipSpeed" min="0.3" max="2" step="0.1" value="1">
+                    </div>
+
+                    <div class="info-callout mt-3">
+                        <div class="callout-icon">💡</div>
+                        <div class="callout-text" id="flipHintText">
+                            <strong>الحافة الطويلة:</strong> اليمين يصبح يساراً في الظهر، والأعلى يظل في الأعلى.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls for Lightbox Tab -->
+                <div class="tab-controls" id="ctrls-tabLightbox">
+                    <h3 class="controls-title">الترابيزة المضيئة (فحص التطابق)</h3>
+                    
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>إضاءة الظهر (الشفافية):</span>
+                            <span id="opacityVal">50%</span>
+                        </div>
+                        <input type="range" id="lightOpacity" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="toggle-group mt-2">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="chkMirrorBack" checked>
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-text">عكس الظهر أفقياً (كما تراه من خلال الضوء)</span>
+                        </label>
+                    </div>
+
+                    <div class="blend-selector mt-3">
+                        <label class="label-title">نمط فحص الفروق (Compare Mode):</label>
+                        <div class="button-toggle-row">
+                            <button class="mode-btn active" data-blend="normal">شفافية عادية</button>
+                            <button class="mode-btn" data-blend="difference">الفرق اللوني (Diff)</button>
+                            <button class="mode-btn" data-blend="anaglyph">سماوي/قرمزي (Offset)</button>
+                        </div>
+                    </div>
+
+                    <div class="nudge-section mt-3">
+                        <div class="nudge-header">
+                            <span class="label-title">معايرة ترحيل الطابعة (Offset Calibration):</span>
+                            <button id="btnResetNudge" class="btn-link">تصفير</button>
+                        </div>
+                        <div class="nudge-grid">
+                            <div class="nudge-item">
+                                <span>إزاحة أفقية X:</span>
+                                <div class="nudge-controls">
+                                    <button class="nudge-btn" data-axis="x" data-dir="-1">-</button>
+                                    <span id="nudgeXVal">0 mm</span>
+                                    <button class="nudge-btn" data-axis="x" data-dir="1">+</button>
+                                </div>
+                            </div>
+                            <div class="nudge-item">
+                                <span>إزاحة رأسية Y:</span>
+                                <div class="nudge-controls">
+                                    <button class="nudge-btn" data-axis="y" data-dir="-1">-</button>
+                                    <span id="nudgeYVal">0 mm</span>
+                                    <button class="nudge-btn" data-axis="y" data-dir="1">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-zoom-row mt-3">
+                        <span class="label-title">قفز سريع للسناتر:</span>
+                        <div class="btn-group-sm">
+                            <button class="btn btn-xs" data-target="tl">أعلى يمين</button>
+                            <button class="btn btn-xs" data-target="tr">أعلى يسار</button>
+                            <button class="btn btn-xs" data-target="bl">أسفل يمين</button>
+                            <button class="btn btn-xs" data-target="br">أسفل يسار</button>
+                            <button class="btn btn-xs" data-target="center">الوسط</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls for Booklet Tab -->
+                <div class="tab-controls" id="ctrls-tabBooklet">
+                    <h3 class="controls-title">محاكي طي الكتيب والملازم</h3>
+                    
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>زاوية الطي (Fold Angle):</span>
+                            <span id="foldAngleVal">180° (مفرودة)</span>
+                        </div>
+                        <input type="range" id="foldSlider" min="0" max="180" value="180">
+                    </div>
+
+                    <div class="button-toggle-row mt-2">
+                        <button id="btnAutoFold" class="btn btn-secondary w-100">
+                            ▶️ محاكاة الطي التلقائي
+                        </button>
+                    </div>
+
+                    <div class="booklet-info-box mt-3">
+                        <h4>📋 ترتيب صفحات ملزمة الكتيب (4 صفحات لكل فرخ):</h4>
+                        <ul>
+                            <li><strong>الوش (الخارجي):</strong> صفحة 4 (الغلاف الخلفي) + صفحة 1 (الغلاف الأمامي)</li>
+                            <li><strong>الظهر (الداخلي):</strong> صفحة 2 (الداخلية الأولى) + صفحة 3 (الداخلية الثانية)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Controls for Printer Guide Tab -->
+                <div class="tab-controls" id="ctrls-tabPrinterGuide">
+                    <h3 class="controls-title">كيف تغذي الورقة في الطابعة اليدوية؟</h3>
+                    <p class="guide-intro">إذا كانت طابعتك عادية بدون دوبلكس آلي (Manual Duplex):</p>
+                    <ol class="printer-steps">
+                        <li><strong>الخطوة 1:</strong> اطبع فرخ الوجه (Front) أولاً.</li>
+                        <li><strong>الخطوة 2:</strong> خذ الورقة المطبوعة من درج الخروج.</li>
+                        <li>
+                            <strong id="guideFlipStep">الخطوة 3:</strong>
+                            <span id="guideFlipText">اقلب الورقة أفقياً (بحيث يصبح الوجه لأسفل والسنتر متجه لنفس اتجاه السحب).</span>
+                        </li>
+                        <li><strong>الخطوة 4:</strong> ضعها في درج التغذية واطبع ملف الظهر (Back).</li>
+                    </ol>
+                </div>
+
+            </section>
+        </aside>
+
+        <!-- Main Viewport Canvas Area -->
+        <section class="viewport-area">
+            
+            <!-- Floating Zoom / Toolbar for Viewport -->
+            <div class="viewport-toolbar">
+                <div class="zoom-tools">
+                    <button id="btnZoomIn" class="tool-btn" title="تكبير">+</button>
+                    <span id="zoomLevel">100%</span>
+                    <button id="btnZoomOut" class="tool-btn" title="تصغير">-</button>
+                    <button id="btnZoomFit" class="tool-btn" title="ملاءمة الشاشة">⛶ ملء</button>
+                </div>
+                <div class="status-indicator">
+                    <span id="sheetSizeInfo">A4 (210 × 297 mm)</span>
+                </div>
+            </div>
+
+            <!-- View 1: 3D Sheet Stage -->
+            <div class="view-stage active" id="stage3d">
+                <div class="perspective-box" id="perspectiveContainer">
+                    <div class="paper-3d" id="paper3d">
+                        <!-- Front Face -->
+                        <div class="face front-face">
+                            <img id="img3dFront" src="assets/front_sample.jpg" alt="الوجه">
+                            <div class="face-tag">الوجه (Front)</div>
+                        </div>
+                        <!-- Back Face -->
+                        <div class="face back-face">
+                            <img id="img3dBack" src="assets/back_sample.jpg" alt="الظهر">
+                            <div class="face-tag">الظهر (Back)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="viewport-hint">
+                    🖱️ يمكنك سحب الورقة بالماوس لتدويرها وفحصها بحرية في الفضاء 3D
+                </div>
+            </div>
+
+            <!-- View 2: Lightbox Stage (Canvas Overlay) -->
+            <div class="view-stage" id="stageLightbox">
+                <div class="lightbox-wrapper" id="lightboxPanWrapper">
+                    <div class="lightbox-canvas-box" id="lightboxBox">
+                        <img id="lbImgFront" class="lb-layer front-layer" src="assets/front_sample.jpg" alt="الوجه">
+                        <img id="lbImgBack" class="lb-layer back-layer" src="assets/back_sample.jpg" alt="الظهر">
+                        <!-- Center Crosshairs and Guides -->
+                        <div class="grid-crosshair-h"></div>
+                        <div class="grid-crosshair-v"></div>
+                    </div>
+                </div>
+                <div class="viewport-hint">
+                    🔍 استخدم عجلة الماوس للتكبير (Zoom) واسحب للتنقل بين أركان الورقة
+                </div>
+            </div>
+
+            <!-- View 3: Booklet Folding Stage -->
+            <div class="view-stage" id="stageBooklet">
+                <div class="booklet-stage-container">
+                    <div class="booklet-scene" id="bookletScene">
+                        <div class="booklet-half booklet-left" id="bookletLeft">
+                            <div class="half-face half-front" id="bLeftFront">
+                                <span class="page-num-badge">صفحة 4</span>
+                            </div>
+                            <div class="half-face half-back" id="bLeftBack">
+                                <span class="page-num-badge">صفحة 2</span>
+                            </div>
+                        </div>
+                        <div class="booklet-spine"></div>
+                        <div class="booklet-half booklet-right" id="bookletRight">
+                            <div class="half-face half-front" id="bRightFront">
+                                <span class="page-num-badge">صفحة 1</span>
+                            </div>
+                            <div class="half-face half-back" id="bRightBack">
+                                <span class="page-num-badge">صفحة 3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="viewport-hint">
+                    📖 تحريك سلايدر زاوية الطي يوضح كيف تنطبق صفحات الكتيب عند التدبيس
+                </div>
+            </div>
+
+            <!-- View 4: Guide View -->
+            <div class="view-stage" id="stagePrinterGuide">
+                <div class="visual-guide-container">
+                    <div class="guide-animation-box">
+                        <div class="printer-illustration">
+                            <div class="printer-body">
+                                <div class="printer-slot slot-in">درج التغذية (Input)</div>
+                                <div class="paper-motion-demo" id="paperMotionDemo">
+                                    <div class="sheet-side side-1">الوش (Front)</div>
+                                    <div class="sheet-side side-2">الظهر (Back)</div>
+                                </div>
+                                <div class="printer-slot slot-out">درج الخروج (Output)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="guide-summary-card">
+                        <h3>قاعدة ذهبية لمنع هدر الورق:</h3>
+                        <p>
+                            في معظم الطابعات عند الطباعة اليدوية: إذا كانت كروت الـ ID مطبوعة بحيث أن الظهر معكوس أفقياً (كما في النموذج المرفق)، فإن الإعداد الصحيح في برنامج الطابعة هو:
+                        </p>
+                        <div class="recommendation-badge">
+                            ✅ <strong>Flip on Long Edge (التقليب على الحافة الطويلة)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📖 دليل الاستخدام والميزات</h3>
+                <button class="modal-close" id="btnCloseHelp">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>1. ما هي مشكلة الطباعة وش وضهر؟</h4>
+                <p>عند طباعة كروت أو كتيبات، يجب أن تتطابق حدود الكارت من الأمام مع حدوده من الخلف بدقة المليمتر. خطأ بسيط في اختيار اتجاه القلب (Long Edge vs Short Edge) يجعل الظهر مقلوباً رأساً على عقب، أو يجعل خلفية كارت تأتي خلف كارت شخص آخر!</p>
+                
+                <h4>2. كيف تحل ترابيزة النور (Digital Lightbox) المشكلة؟</h4>
+                <p>تماماً مثل ترابيزة النور في المطابع، يقوم البرنامج بإسقاط الوش والظهر فوق بعضهما مع سلايدر شفافية. يمكنك تكبير علامات القص والسناتر ومقارنتها بدقة لمعرفة إذا كان الظهر يحتاج إزاحة (Offset) بمقدار معين قبل إعطاء أمر الطباعة.</p>
+
+                <h4>3. الفرق اللوني (Difference Mode):</h4>
+                <p>ميزة متطورة تحول الأجزاء المتطابقة تماماً إلى لون أسود، بينما تضيء أي خطوط غير متطابقة بألوان فسفورية ساطعة لتكتشف عدم المحاذاة فوراً.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="toast">
+        <span class="toast-icon" id="toastIcon">📋</span>
+        <span class="toast-message" id="toastMessage">تم لصق الصورة بنجاح!</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "محاكي الطباعة الدوبلكس",
+  "short_name": "Duplex Simulator",
+  "description": "محاكي الطباعة وش وضهر وترابيزة النور الرقمية لفحص تطابق الكروت والكتب",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#38bdf8",
+  "icons": [
+    {
+      "src": "assets/front_sample.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}
